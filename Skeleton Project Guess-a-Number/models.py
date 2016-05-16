@@ -16,21 +16,20 @@ class User(ndb.Model):
 
 class Game(ndb.Model):
     """Game object"""
-    target = ndb.IntegerProperty(required=True)
-    attempts_allowed = ndb.IntegerProperty(required=True)
-    attempts_remaining = ndb.IntegerProperty(required=True, default=5)
+    created = ndb.DateTimeProperty(auto_now_add=True)
+    target = ndb.StringProperty(required=True)
+    guesses = ndb.IntegerProperty(repeated=True, default=0)
+    hits = ndb.StringProperty(repeated=True)
+    misses = ndb.StringProperty(repeated=True)
+    image_uri = ndb.StringProperty(default='')
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
-    def new_game(cls, user, min, max, attempts):
+    def new_game(cls, user, target):
         """Creates and returns a new game"""
-        if max < min:
-            raise ValueError('Maximum must be greater than minimum')
         game = Game(user=user,
-                    target=random.choice(range(1, max + 1)),
-                    attempts_allowed=attempts,
-                    attempts_remaining=attempts,
+                    target=target,
                     game_over=False)
         game.put()
         return game
@@ -38,9 +37,14 @@ class Game(ndb.Model):
     def to_form(self, message):
         """Returns a GameForm representation of the Game"""
         form = GameForm()
+        form.created = self.created
         form.urlsafe_key = self.key.urlsafe()
         form.user_name = self.user.get().name
-        form.attempts_remaining = self.attempts_remaining
+        form.target = self.target
+        form.guesses = self.guesses.join(',')
+        form.hits = self.hits.join(',')
+        form.misses = self.misses.join(',')
+        form.image_uri = self.image_uri
         form.game_over = self.game_over
         form.message = message
         return form
@@ -71,18 +75,21 @@ class Score(ndb.Model):
 class GameForm(messages.Message):
     """GameForm for outbound game state information"""
     urlsafe_key = messages.StringField(1, required=True)
-    attempts_remaining = messages.IntegerField(2, required=True)
-    game_over = messages.BooleanField(3, required=True)
-    message = messages.StringField(4, required=True)
-    user_name = messages.StringField(5, required=True)
+    target = messages.StringField(2, required=True)
+    guesses = messages.StringField(3, repeated = 
+    game_over = messages.BooleanField(4, required=True)
+    message = messages.StringField(5, required=True)
+    user_name = messages.StringField(6, required=True)
+    created = messages.StringField(7, required=True)
+    guesses = messages.IntegerField(8)
+    hits = messages.StringField(9)
+    misses = messages.StringField(10)
 
 
 class NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
-    min = messages.IntegerField(2, default=1)
-    max = messages.IntegerField(3, default=10)
-    attempts = messages.IntegerField(4, default=5)
+    target = messages.StringField(2, required=True)
 
 
 class MakeMoveForm(messages.Message):
