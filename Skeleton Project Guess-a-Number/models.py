@@ -18,7 +18,7 @@ class Game(ndb.Model):
     """Game object"""
     created = ndb.DateTimeProperty(auto_now_add=True)
     target = ndb.StringProperty(required=True)
-    guesses = ndb.IntegerProperty(repeated=True, default=0)
+    guesses = ndb.IntegerProperty(default=0)
     hits = ndb.StringProperty(repeated=True)
     misses = ndb.StringProperty(repeated=True)
     image_uri = ndb.StringProperty(default='')
@@ -41,7 +41,7 @@ class Game(ndb.Model):
         form.urlsafe_key = self.key.urlsafe()
         form.user_name = self.user.get().name
         form.target = self.target
-        form.guesses = self.guesses.join(',')
+        form.guesses = self.guesses
         form.hits = self.hits.join(',')
         form.misses = self.misses.join(',')
         form.image_uri = self.image_uri
@@ -76,7 +76,7 @@ class GameForm(messages.Message):
     """GameForm for outbound game state information"""
     urlsafe_key = messages.StringField(1, required=True)
     target = messages.StringField(2, required=True)
-    guesses = messages.StringField(3, repeated = 
+    guesses = messages.StringField(3, repeated=True)
     game_over = messages.BooleanField(4, required=True)
     message = messages.StringField(5, required=True)
     user_name = messages.StringField(6, required=True)
