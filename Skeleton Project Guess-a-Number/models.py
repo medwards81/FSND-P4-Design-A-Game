@@ -8,6 +8,7 @@ from protorpc import messages
 from google.appengine.ext import ndb
 
 class Hangman:
+    guess_limit = 6
     images = {
         'start': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
                '/8/8b/Hangman-0.png/60px-Hangman-0.png">' ,
@@ -37,6 +38,7 @@ class Game(ndb.Model):
     created = ndb.DateTimeProperty(auto_now_add=True)
     target = ndb.StringProperty(required=True)
     guesses = ndb.IntegerProperty(default=0)
+    guess_limit = ndb.IntegerProperty(default=Hangman.guess_limit)
     hits = ndb.StringProperty(repeated=True)
     misses = ndb.StringProperty(repeated=True)
     image_uri = ndb.StringProperty(default=Hangman.images['start'])
@@ -60,6 +62,7 @@ class Game(ndb.Model):
         form.user_name = self.user.get().name
         form.target = self.target
         form.guesses = self.guesses
+        form.guess_limit = self.guess_limit
         form.hits = self.hits
         form.misses = self.misses
         form.image_uri = self.image_uri
@@ -94,7 +97,7 @@ class GameForm(messages.Message):
     """GameForm for outbound game state information"""
     urlsafe_key = messages.StringField(1, required=True)
     target = messages.StringField(2, required=True)
-    guesses = messages.StringField(3, repeated=True)
+    guesses = messages.IntegerField(3)
     game_over = messages.BooleanField(4, required=True)
     message = messages.StringField(5, required=True)
     user_name = messages.StringField(6, required=True)
@@ -103,6 +106,7 @@ class GameForm(messages.Message):
     hits = messages.StringField(9, repeated=True)
     misses = messages.StringField(10, repeated=True)
     image_uri = messages.StringField(11)
+    guess_limit = messages.IntegerField(12)
 
 
 class NewGameForm(messages.Message):
@@ -113,7 +117,7 @@ class NewGameForm(messages.Message):
 
 class MakeMoveForm(messages.Message):
     """Used to make a move in an existing game"""
-    guess = messages.IntegerField(1, required=True)
+    guess = messages.StringFieldField(1, required=True)
 
 
 class ScoreForm(messages.Message):
