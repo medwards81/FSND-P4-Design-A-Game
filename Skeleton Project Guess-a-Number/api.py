@@ -56,7 +56,16 @@ class HangmanApi(remote.Service):
         if not user:
             raise endpoints.NotFoundException(
                     'A User with that name does not exist!')
-        game = Game.new_game(user.key, request.target)
+
+        word_stripped = request.word.strip()
+        if not word_stripped:
+            raise endpoints.BadRequestException("Hangman 'word' field required")
+
+        word_list = word_stripped.split()
+        if len(word_list) > 1:
+            raise endpoints.BadRequestException("Hangman 'word' field must be a single word")
+
+        game = Game.new_game(user.key, word_stripped)
         return game.to_form('Good luck playing Hangman!')
 
 
@@ -69,7 +78,7 @@ class HangmanApi(remote.Service):
         """Return the current game state."""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if game:
-            return game.to_form('Time to make a move!')
+            return game.to_form('Time to make a guess!')
         else:
             raise endpoints.NotFoundException('Game not found!')
 
@@ -84,22 +93,37 @@ class HangmanApi(remote.Service):
         if game.game_over:
             return game.to_form('Game already over!')
 
-        target_upper = game.target.upper()
-        target_no_spaces = ''.join(target_upper.split())
-        request_upper = request.guess.upper()
-        if request_upper in target_no_spaces:
-            Game.hits.append(request.guess)
+        request_upper = request.guess.upper().strip()
+        if not request_upper:
+            raise endpoints.BadRequestException("Hangman 'guess' field required")
+
+        if len(request_upper) > 1:
+            raise endpoints.BadRequestException("Hangman 'guess' field must be 1 character")
+
+        if request_upper in game.hits:
+            raise endpoints.BadRequestException("You've already guessed '{0}'".format(request_upper))
+
+        if request_upper in game.misses:
+            raise endpoints.BadRequestException("You've already guessed '{0}'".format(request_upper))
+
+        if request_upper in game.word:
+            game.hits.append(request_upper)
+            game.match_count += game.word.count(request_upper)
             msg = 'Hit!'
         else:
-            Game.misses.append(request.guess)
-            Games.guesses += 1
-            msg = 'Miss!'            
-         
-        if len(Games.hits) == len(target_no_spaces):
+            game.misses.append(request_upper)
+            miss_count = game.miss_count
+            game.miss_count = miss_count + 1
+            if miss_count < game.guess_limit:
+                img_key = "guess-{0}".format(game.miss_count)
+                game.image_uri = Hangman.images[img_key]
+            msg = 'Miss!'
+
+        if game.match_count == len(game.word):
             game.end_game(True)
             return game.to_form('You win!')
 
-        if Games.guesses == Games.guess_limit:
+        if game.miss_count == game.guess_limit:
             game.end_game(False)
             return game.to_form(msg + ' Game over!')
         else:

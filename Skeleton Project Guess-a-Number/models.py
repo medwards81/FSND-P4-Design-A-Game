@@ -10,23 +10,23 @@ from google.appengine.ext import ndb
 class Hangman:
     guess_limit = 6
     images = {
-        'start': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-0.png">' ,
-        'guess-1': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-1.png">' ,
-        'guess-2': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-2.png">' ,
-        'guess-3': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-3.png">' ,
-        'guess-4': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-4.png">' ,
-        'guess-5': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-5.png">' ,
-        'guess-6': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
-               '/8/8b/Hangman-0.png/60px-Hangman-6.png">' ,
+        'start': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-0.png' ,
+        'guess-1': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-1.png' ,
+        'guess-2': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-2.png' ,
+        'guess-3': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-3.png' ,
+        'guess-4': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-4.png' ,
+        'guess-5': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-5.png' ,
+        'guess-6': '//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-6.png' ,
     }
 
- 
+
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
@@ -36,8 +36,9 @@ class User(ndb.Model):
 class Game(ndb.Model):
     """Game object"""
     created = ndb.DateTimeProperty(auto_now_add=True)
-    target = ndb.StringProperty(required=True)
-    guesses = ndb.IntegerProperty(default=0)
+    word = ndb.StringProperty(required=True)
+    miss_count = ndb.IntegerProperty(default=0)
+    match_count = ndb.IntegerProperty(default=0)
     guess_limit = ndb.IntegerProperty(default=Hangman.guess_limit)
     hits = ndb.StringProperty(repeated=True)
     misses = ndb.StringProperty(repeated=True)
@@ -46,10 +47,11 @@ class Game(ndb.Model):
     user = ndb.KeyProperty(required=True, kind='User')
 
     @classmethod
-    def new_game(cls, user, target):
+    def new_game(cls, user, word):
         """Creates and returns a new game"""
+        word_upper = word.upper()
         game = Game(user=user,
-                    target=target,
+                    word=word_upper,
                     game_over=False)
         game.put()
         return game
@@ -60,8 +62,9 @@ class Game(ndb.Model):
         form.created = str(self.created)
         form.urlsafe_key = self.key.urlsafe()
         form.user_name = self.user.get().name
-        form.target = self.target
-        form.guesses = self.guesses
+        form.word = self.word
+        form.miss_count = self.miss_count
+        form.match_count = self.match_count
         form.guess_limit = self.guess_limit
         form.hits = self.hits
         form.misses = self.misses
@@ -77,7 +80,7 @@ class Game(ndb.Model):
         self.put()
         # Add the game to the score 'board'
         score = Score(user=self.user, date=date.today(), won=won,
-                      guesses=self.attempts_allowed - self.attempts_remaining)
+                      guess_limit=self.guess_limit, miss_count=self.miss_count)
         score.put()
 
 
@@ -86,18 +89,20 @@ class Score(ndb.Model):
     user = ndb.KeyProperty(required=True, kind='User')
     date = ndb.DateProperty(required=True)
     won = ndb.BooleanProperty(required=True)
-    guesses = ndb.IntegerProperty(required=True)
+    guess_limit = ndb.IntegerProperty(required=True)
+    miss_count = ndb.IntegerProperty(required=True)
 
     def to_form(self):
         return ScoreForm(user_name=self.user.get().name, won=self.won,
-                         date=str(self.date), guesses=self.guesses)
+                         date=str(self.date), guess_limit=self.guess_limit,
+                         miss_count=self.miss_count)
 
 
 class GameForm(messages.Message):
     """GameForm for outbound game state information"""
     urlsafe_key = messages.StringField(1, required=True)
-    target = messages.StringField(2, required=True)
-    guesses = messages.IntegerField(3)
+    word = messages.StringField(2, required=True)
+    miss_count = messages.IntegerField(3)
     game_over = messages.BooleanField(4, required=True)
     message = messages.StringField(5, required=True)
     user_name = messages.StringField(6, required=True)
@@ -107,17 +112,18 @@ class GameForm(messages.Message):
     misses = messages.StringField(10, repeated=True)
     image_uri = messages.StringField(11)
     guess_limit = messages.IntegerField(12)
+    match_count = messages.IntegerField(13)
 
 
 class NewGameForm(messages.Message):
     """Used to create a new game"""
     user_name = messages.StringField(1, required=True)
-    target = messages.StringField(2, required=True)
+    word = messages.StringField(2, required=True)
 
 
 class MakeMoveForm(messages.Message):
     """Used to make a move in an existing game"""
-    guess = messages.StringFieldField(1, required=True)
+    guess = messages.StringField(1, required=True)
 
 
 class ScoreForm(messages.Message):
@@ -125,7 +131,8 @@ class ScoreForm(messages.Message):
     user_name = messages.StringField(1, required=True)
     date = messages.StringField(2, required=True)
     won = messages.BooleanField(3, required=True)
-    guesses = messages.IntegerField(4, required=True)
+    guess_limit = messages.IntegerField(4, required=True)
+    miss_count = messages.IntegerField(5, required=True)
 
 
 class ScoreForms(messages.Message):
