@@ -7,11 +7,29 @@ from datetime import date
 from protorpc import messages
 from google.appengine.ext import ndb
 
+class Hangman:
+    images = {
+        'start': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-0.png">' ,
+        'guess-1': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-1.png">' ,
+        'guess-2': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-2.png">' ,
+        'guess-3': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-3.png">' ,
+        'guess-4': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-4.png">' ,
+        'guess-5': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-5.png">' ,
+        'guess-6': '<img src="//upload.wikimedia.org/wikipedia/commons/thumb'\
+               '/8/8b/Hangman-0.png/60px-Hangman-6.png">' ,
+    }
 
+ 
 class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
-    email =ndb.StringProperty()
+    email = ndb.StringProperty()
 
 
 class Game(ndb.Model):
@@ -21,7 +39,7 @@ class Game(ndb.Model):
     guesses = ndb.IntegerProperty(default=0)
     hits = ndb.StringProperty(repeated=True)
     misses = ndb.StringProperty(repeated=True)
-    image_uri = ndb.StringProperty(default='')
+    image_uri = ndb.StringProperty(default=Hangman.images['start'])
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
 
@@ -37,13 +55,13 @@ class Game(ndb.Model):
     def to_form(self, message):
         """Returns a GameForm representation of the Game"""
         form = GameForm()
-        form.created = self.created
+        form.created = str(self.created)
         form.urlsafe_key = self.key.urlsafe()
         form.user_name = self.user.get().name
         form.target = self.target
         form.guesses = self.guesses
-        form.hits = self.hits.join(',')
-        form.misses = self.misses.join(',')
+        form.hits = self.hits
+        form.misses = self.misses
         form.image_uri = self.image_uri
         form.game_over = self.game_over
         form.message = message
@@ -82,8 +100,9 @@ class GameForm(messages.Message):
     user_name = messages.StringField(6, required=True)
     created = messages.StringField(7, required=True)
     guesses = messages.IntegerField(8)
-    hits = messages.StringField(9)
-    misses = messages.StringField(10)
+    hits = messages.StringField(9, repeated=True)
+    misses = messages.StringField(10, repeated=True)
+    image_uri = messages.StringField(11)
 
 
 class NewGameForm(messages.Message):
