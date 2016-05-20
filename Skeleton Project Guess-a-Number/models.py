@@ -45,6 +45,7 @@ class Game(ndb.Model):
     image_uri = ndb.StringProperty(default=Hangman.images['start'])
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
+    cancelled = ndb.BooleanProperty(default=False)
 
     @classmethod
     def new_game(cls, user, word):
@@ -71,6 +72,7 @@ class Game(ndb.Model):
         form.image_uri = self.image_uri
         form.game_over = self.game_over
         form.message = message
+        form.cancelled = self.cancelled
         return form
 
     def end_game(self, won=False):
@@ -113,6 +115,12 @@ class GameForm(messages.Message):
     image_uri = messages.StringField(11)
     guess_limit = messages.IntegerField(12)
     match_count = messages.IntegerField(13)
+    cancelled = messages.BooleanField(14)
+
+
+class GameForms(messages.Message):
+    """Return multiple GameForms"""
+    items = messages.MessageField(GameForm, 1, repeated=True)
 
 
 class NewGameForm(messages.Message):

@@ -13,7 +13,7 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score, Hangman
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    ScoreForms
+    GameForms, ScoreForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -23,7 +23,9 @@ MAKE_MOVE_REQUEST = endpoints.ResourceContainer(
     MakeMoveForm,
     urlsafe_game_key=messages.StringField(1),)
 USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
-                                           email=messages.StringField(2))
+    email=messages.StringField(2),)
+GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(
+        urlsafe_user_key=messages.StringField(1),)
 
 MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
 
@@ -129,6 +131,23 @@ class HangmanApi(remote.Service):
         else:
             game.put()
             return game.to_form(msg)
+
+
+    @endpoints.method(request_message=GET_USER_GAMES_REQUEST,
+                      response_message=GameForms,
+                      path='games/user/{urlsafe_user_key}',
+                      name='get_user_games',
+                      http_method='GET')
+    def get_user_games(self, request):
+        user = get_by_urlsafe(request.urlsafe_user_key, User)
+        if not user:
+            raise endpoints.NotFoundException('User not found!')
+        games = Game.query(Game.user==user.key, Game.game_over==False,
+                                           Game.cancelled==False).order(-Game.created)
+        # return set of GameForm objects per User
+        return GameForms(
+            items=[game.to_form('') for game in games]
+        )
 
 
 api = endpoints.api_server([HangmanApi])
