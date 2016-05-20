@@ -7,7 +7,7 @@ primarily with communication to/from the API's users."""
 
 import logging
 import endpoints
-from protorpc import remote, messages
+from protorpc import remote, messages, message_types
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
@@ -32,13 +32,16 @@ MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
 @endpoints.api(name='hangman', version='v1')
 class HangmanApi(remote.Service):
     """Game API"""
+
+# - - - User Actions - - - - - - - - - - - - - - - - - - - -
+
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=StringMessage,
                       path='user',
                       name='create_user',
                       http_method='POST')
     def create_user(self, request):
-        """Create a User. Requires a unique username"""
+        """Create a User. Requires a unique username."""
         if User.query(User.name == request.user_name).get():
             raise endpoints.ConflictException(
                     'A User with that name already exists!')
@@ -46,6 +49,8 @@ class HangmanApi(remote.Service):
         user.put()
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
+                
+# - - - Game Actions - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=NEW_GAME_REQUEST,
                       response_message=GameForm,
@@ -53,7 +58,7 @@ class HangmanApi(remote.Service):
                       name='new_game',
                       http_method='POST')
     def new_game(self, request):
-        """Creates new game"""
+        """Creates new game."""
         user = User.query(User.name == request.user_name).get()
         if not user:
             raise endpoints.NotFoundException(
@@ -139,6 +144,7 @@ class HangmanApi(remote.Service):
                       name='get_user_games',
                       http_method='GET')
     def get_user_games(self, request):
+        """Return active games (by urlsafe_user_key)."""
         user = get_by_urlsafe(request.urlsafe_user_key, User)
         if not user:
             raise endpoints.NotFoundException('User not found!')
@@ -148,6 +154,20 @@ class HangmanApi(remote.Service):
         return GameForms(
             items=[game.to_form('') for game in games]
         )
+        
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=message_types.VoidMessage,
+                      path='game/cancel/{urlsafe_game_key}',
+                      name='cancel_game',
+                      http_method='PUT')
+    def cancel_game(self, request):
+        """Cancel a game (by urlsafe_game_key)."""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if game.game_over == True:
+            raise endpoints.BadRequestException("Game has already been completed")
+        game.cancelled = True
+        game.put()
+        return message_types.VoidMessage()
 
 
 api = endpoints.api_server([HangmanApi])
