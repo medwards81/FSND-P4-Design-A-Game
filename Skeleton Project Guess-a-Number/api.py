@@ -176,14 +176,14 @@ class HangmanApi(remote.Service):
     @endpoints.method(request_message=GET_HIGH_SCORES_REQUEST,
                       response_message=ScoreForms,
                       path='scores',
-                      name='get_high_scores
+                      name='get_high_scores',
                       http_method='GET')
     def get_high_scores(self, request):
         """Return high scores, optionally by number_of_requests"""
         if request.number_of_results:
-            return ScoreForms(items=[score.to_form() for score in Score.query().fetch(request.number_of_results).order(-score))
+            return ScoreForms(items=[score.to_form() for score in Score.query().fetch(request.number_of_results).order(-Score.score)])
         else:
-            return ScoreForms(items=[score.to_form() for score in Score.query().order(-score))
+            return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score)])
 
 
 api = endpoints.api_server([HangmanApi])

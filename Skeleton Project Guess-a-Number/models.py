@@ -82,7 +82,9 @@ class Game(ndb.Model):
         self.game_over = True
         self.put()
         # Add the game to the score 'board'
-        final_score = len(self.hits) * Hangman.points_per_hit
+        final_score = 0
+        if won:
+            final_score = len(self.hits) * Hangman.points_per_hit
         score = Score(user=self.user, date=date.today(),
                         game=self.key, won=won, score=final_score)
         score.put()
@@ -102,7 +104,7 @@ class Score(ndb.Model):
                          date=str(self.date),
                          guess_limit=self.game.get().guess_limit,
                          miss_count=len(self.game.get().misses),
-                         word_count=len(self.geme.get().word),
+                         word_count=len(self.game.get().word),
                          score=self.score, word=self.game.get().word)
 
 
