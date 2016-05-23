@@ -9,6 +9,7 @@ from google.appengine.ext import ndb
 
 class Hangman:
     guess_limit = 6
+    points_per_hit = 2
     images = {
         'start': '//upload.wikimedia.org/wikipedia/commons/thumb'\
                '/8/8b/Hangman-0.png/60px-Hangman-0.png' ,
@@ -81,8 +82,9 @@ class Game(ndb.Model):
         self.game_over = True
         self.put()
         # Add the game to the score 'board'
-        score = Score(user=self.user, date=date.today(), won=won,
-                      guess_limit=self.guess_limit, miss_count=self.miss_count)
+        final_score = len(self.hits) * Hangman.points_per_hit
+        score = Score(user=self.user, date=date.today(),
+                        game=self.key, won=won, score=final_score)
         score.put()
 
 
@@ -90,14 +92,18 @@ class Score(ndb.Model):
     """Score object"""
     user = ndb.KeyProperty(required=True, kind='User')
     date = ndb.DateProperty(required=True)
+    game = ndb.KeyProperty(required=True, kind='Game')
     won = ndb.BooleanProperty(required=True)
-    guess_limit = ndb.IntegerProperty(required=True)
-    miss_count = ndb.IntegerProperty(required=True)
+    score = ndb.IntegerProperty(required=True, default=0)
+    
 
     def to_form(self):
         return ScoreForm(user_name=self.user.get().name, won=self.won,
-                         date=str(self.date), guess_limit=self.guess_limit,
-                         miss_count=self.miss_count)
+                         date=str(self.date),
+                         guess_limit=self.game.get().guess_limit,
+                         miss_count=len(self.game.get().misses),
+                         word_count=len(self.geme.get().word),
+                         score=self.score, word=self.game.get().word)
 
 
 class GameForm(messages.Message):
@@ -141,6 +147,9 @@ class ScoreForm(messages.Message):
     won = messages.BooleanField(3, required=True)
     guess_limit = messages.IntegerField(4, required=True)
     miss_count = messages.IntegerField(5, required=True)
+    word_count = messages.IntegerField(6, required=True)
+    score = messages.IntegerField(7, required=True)
+    word = messages.StringField(8, required=True)
 
 
 class ScoreForms(messages.Message):

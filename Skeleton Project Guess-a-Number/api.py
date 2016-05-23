@@ -26,6 +26,8 @@ USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
     email=messages.StringField(2),)
 GET_USER_GAMES_REQUEST = endpoints.ResourceContainer(
         urlsafe_user_key=messages.StringField(1),)
+GET_HIGH_SCORES_REQUEST = endpoints.ResourceContainer(
+        number_of_results=messages.IntegerField(1),)
 
 MEMCACHE_MOVES_REMAINING = 'MOVES_REMAINING'
 
@@ -155,6 +157,7 @@ class HangmanApi(remote.Service):
             items=[game.to_form('') for game in games]
         )
         
+
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=message_types.VoidMessage,
                       path='game/cancel/{urlsafe_game_key}',
@@ -168,6 +171,19 @@ class HangmanApi(remote.Service):
         game.cancelled = True
         game.put()
         return message_types.VoidMessage()
+        
+
+    @endpoints.method(request_message=GET_HIGH_SCORES_REQUEST,
+                      response_message=ScoreForms,
+                      path='scores',
+                      name='get_high_scores
+                      http_method='GET')
+    def get_high_scores(self, request):
+        """Return high scores, optionally by number_of_requests"""
+        if request.number_of_results:
+            return ScoreForms(items=[score.to_form() for score in Score.query().fetch(request.number_of_results).order(-score))
+        else:
+            return ScoreForms(items=[score.to_form() for score in Score.query().order(-score))
 
 
 api = endpoints.api_server([HangmanApi])
