@@ -11,9 +11,9 @@ from protorpc import remote, messages, message_types
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
-from models import User, Game, Score, Hangman
+from models import User, Game, Score, Hangman, UserRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    GameForms, ScoreForms
+    GameForms, ScoreForms, UserRecordForm, UserRecordForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -51,7 +51,7 @@ class HangmanApi(remote.Service):
         user.put()
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
-                
+
 # - - - Game Actions - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(request_message=NEW_GAME_REQUEST,
@@ -125,7 +125,7 @@ class HangmanApi(remote.Service):
             game.miss_count = miss_count + 1
             if miss_count < game.guess_limit:
                 img_key = "guess-{0}".format(game.miss_count)
-                game.image_uri = Hangman.images[img_key]
+                game.image_uri = Hangman.DEFAULTS['images'][img_key]
             msg = 'Miss!'
 
         if game.match_count == len(game.word):
@@ -156,7 +156,7 @@ class HangmanApi(remote.Service):
         return GameForms(
             items=[game.to_form('') for game in games]
         )
-        
+
 
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=message_types.VoidMessage,
@@ -171,7 +171,7 @@ class HangmanApi(remote.Service):
         game.cancelled = True
         game.put()
         return message_types.VoidMessage()
-        
+
 
     @endpoints.method(request_message=GET_HIGH_SCORES_REQUEST,
                       response_message=ScoreForms,
@@ -179,11 +179,20 @@ class HangmanApi(remote.Service):
                       name='get_high_scores',
                       http_method='GET')
     def get_high_scores(self, request):
-        """Return high scores, optionally by number_of_requests"""
+        """Return high scores, optionally by number_of_requests."""
         if request.number_of_results:
             return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score).fetch(request.number_of_results)])
         else:
             return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score)])
+            
+            
+    @endpoints.method(response_message=UserRecordForms,
+                      path='ranking',
+                      name='get_user_rankings',
+                      http_method='GET')
+    def get_user_rankings(self, request):
+        """Return user rankings sorted by wins, then win percentage."""
+        return UserRecordForms(items=[rank.to_form() for rank in UserRecord.query().order(-UserRecord.wins, -UserRecord.win_pct)])
 
 
 api = endpoints.api_server([HangmanApi])

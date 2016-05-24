@@ -22,3 +22,10 @@ indexes:
   - name: user
   - name: created
     direction: desc
+    
+- kind: UserRecord
+  properties:
+  - name: wins
+    direction: desc
+  - name: win_pct
+    direction: desc
