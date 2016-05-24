@@ -181,7 +181,7 @@ class HangmanApi(remote.Service):
     def get_high_scores(self, request):
         """Return high scores, optionally by number_of_requests"""
         if request.number_of_results:
-            return ScoreForms(items=[score.to_form() for score in Score.query().fetch(request.number_of_results).order(-Score.score)])
+            return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score).fetch(request.number_of_results)])
         else:
             return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score)])
 

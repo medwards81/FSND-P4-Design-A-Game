@@ -98,7 +98,6 @@ class Score(ndb.Model):
     won = ndb.BooleanProperty(required=True)
     score = ndb.IntegerProperty(required=True, default=0)
     
-
     def to_form(self):
         return ScoreForm(user_name=self.user.get().name, won=self.won,
                          date=str(self.date),
