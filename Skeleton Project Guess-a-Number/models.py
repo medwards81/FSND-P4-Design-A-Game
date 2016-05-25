@@ -65,6 +65,7 @@ class Game(ndb.Model):
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
     cancelled = ndb.BooleanProperty(default=False)
+    history = ndb.StringProperty(repeated=True)
 
     @classmethod
     def new_game(cls, user, word):
@@ -92,6 +93,13 @@ class Game(ndb.Model):
         form.game_over = self.game_over
         form.message = message
         form.cancelled = self.cancelled
+        return form
+        
+    def to_history_form(self):
+        """Returns a GameHistoryForm"""
+        form = GameHistoryForm()
+        form.word = self.word
+        form.history = self.history
         return form
 
     def end_game(self, won=False):
@@ -159,6 +167,12 @@ class GameForm(messages.Message):
 class GameForms(messages.Message):
     """Return multiple GameForms"""
     items = messages.MessageField(GameForm, 1, repeated=True)
+    
+    
+class GameHistoryForm(messages.Message):
+    """GameHistoryForm for outbound game state information"""
+    word = messages.StringField(1, required=True)
+    history = messages.StringField(2, repeated=True)
 
 
 class NewGameForm(messages.Message):

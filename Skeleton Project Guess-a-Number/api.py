@@ -7,13 +7,14 @@ primarily with communication to/from the API's users."""
 
 import logging
 import endpoints
+import json
 from protorpc import remote, messages, message_types
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, Score, Hangman, UserRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    GameForms, ScoreForms, UserRecordForm, UserRecordForms
+    GameForms, ScoreForms, UserRecordForm, UserRecordForms, GameHistoryForm
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -127,6 +128,10 @@ class HangmanApi(remote.Service):
                 img_key = "guess-{0}".format(game.miss_count)
                 game.image_uri = Hangman.DEFAULTS['images'][img_key]
             msg = 'Miss!'
+           
+        # store the result of  the guess in the game's history field
+        move_result = {'Guess':request_upper, 'Result':msg}
+        game.history.append(json.dumps(move_result))
 
         if game.match_count == len(game.word):
             game.end_game(True)
@@ -195,4 +200,18 @@ class HangmanApi(remote.Service):
         return UserRecordForms(items=[rank.to_form() for rank in UserRecord.query().order(-UserRecord.wins, -UserRecord.win_pct)])
 
 
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=GameHistoryForm,
+                      path='game_history/{urlsafe_game_key}',
+                      name='get_game_history',
+                      http_method='GET')
+    def get_game_history(self, request):
+        """Return the history of game moves."""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if game:
+            return game.to_history_form()
+        else:
+            raise endpoints.NotFoundException('Game not found!')
+
+ 
 api = endpoints.api_server([HangmanApi])
