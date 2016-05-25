@@ -50,8 +50,17 @@ class HangmanApi(remote.Service):
                     'A User with that name already exists!')
         user = User(name=request.user_name, email=request.email)
         user.put()
+        # Create the UserRecord for storing wins, losses, etc.
+        self._create_user_record(user)
         return StringMessage(message='User {} created!'.format(
                 request.user_name))
+
+
+    def _create_user_record(self, user):
+        # Create a UserRecord from the created User
+        user_record = UserRecord(user=user.key)
+        user_record.put()
+
 
 # - - - Game Actions - - - - - - - - - - - - - - - - - - - -
 
@@ -67,10 +76,12 @@ class HangmanApi(remote.Service):
             raise endpoints.NotFoundException(
                     'A User with that name does not exist!')
 
+        # remove any leading or trailing spaces
         word_stripped = request.word.strip()
         if not word_stripped:
             raise endpoints.BadRequestException("Hangman 'word' field required")
 
+        # allow a single letter only
         word_list = word_stripped.split()
         if len(word_list) > 1:
             raise endpoints.BadRequestException("Hangman 'word' field must be a single word")
@@ -103,6 +114,7 @@ class HangmanApi(remote.Service):
         if game.game_over:
             return game.to_form('Game already over!')
 
+        # clean incoming guess and validate
         request_upper = request.guess.upper().strip()
         if not request_upper:
             raise endpoints.BadRequestException("Hangman 'guess' field required")
@@ -128,7 +140,7 @@ class HangmanApi(remote.Service):
                 img_key = "guess-{0}".format(game.miss_count)
                 game.image_uri = Hangman.DEFAULTS['images'][img_key]
             msg = 'Miss!'
-           
+
         # store the result of  the guess in the game's history field
         move_result = {'Guess':request_upper, 'Result':msg}
         game.history.append(json.dumps(move_result))
@@ -189,8 +201,8 @@ class HangmanApi(remote.Service):
             return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score).fetch(request.number_of_results)])
         else:
             return ScoreForms(items=[score.to_form() for score in Score.query().order(-Score.score)])
-            
-            
+
+
     @endpoints.method(response_message=UserRecordForms,
                       path='ranking',
                       name='get_user_rankings',
@@ -213,5 +225,5 @@ class HangmanApi(remote.Service):
         else:
             raise endpoints.NotFoundException('Game not found!')
 
- 
+
 api = endpoints.api_server([HangmanApi])

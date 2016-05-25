@@ -12,17 +12,17 @@ indexes:
 
 - kind: Game
   properties:
-  - name: game_over
-  - name: user
-  
-- kind: Game
-  properties:
   - name: cancelled
   - name: game_over
   - name: user
   - name: created
     direction: desc
-    
+
+- kind: Game
+  properties:
+  - name: game_over
+  - name: user
+
 - kind: UserRecord
   properties:
   - name: wins

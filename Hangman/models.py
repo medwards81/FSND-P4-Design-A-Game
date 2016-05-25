@@ -66,6 +66,7 @@ class Game(ndb.Model):
     user = ndb.KeyProperty(required=True, kind='User')
     cancelled = ndb.BooleanProperty(default=False)
     history = ndb.StringProperty(repeated=True)
+    game_won = ndb.BooleanProperty(default=False)
 
     @classmethod
     def new_game(cls, user, word):
@@ -93,6 +94,7 @@ class Game(ndb.Model):
         form.game_over = self.game_over
         form.message = message
         form.cancelled = self.cancelled
+        form.game_won = self.game_won
         return form
         
     def to_history_form(self):
@@ -100,15 +102,18 @@ class Game(ndb.Model):
         form = GameHistoryForm()
         form.word = self.word
         form.history = self.history
+        form.game_over = self.game_over
+        form.game_won = self.game_won
         return form
 
     def end_game(self, won=False):
         """Ends the game - if won is True, the player won. - if won is False,
         the player lost."""
         self.game_over = True
+        self.game_won = won
         self.put()
 
-        # Add the game to the score 'board'
+        # add the game to the score 'board'
         final_score = 0
         if won:
             final_score = len(self.hits) * Hangman.DEFAULTS['points_per_hit']
@@ -116,16 +121,14 @@ class Game(ndb.Model):
                         game=self.key, won=won, score=final_score)
         score.put()
 
-        # Create and/or update the UserRecord
+        # udate the UserRecord
         user_record = UserRecord.query(UserRecord.user == self.user).get()
-        if not user_record:
-            user_record = UserRecord(user=self.user)
         if won:
             user_record.wins += 1
         else:
             user_record.losses += 1
         user_record.games += 1
-        user_record.win_pct = round(int(user_record.wins) / int(user_record.games), 3)
+        user_record.win_pct = round(user_record.wins / user_record.games, 3)
         user_record.put()
 
 
@@ -162,6 +165,7 @@ class GameForm(messages.Message):
     guess_limit = messages.IntegerField(12)
     match_count = messages.IntegerField(13)
     cancelled = messages.BooleanField(14)
+    game_won = messages.BooleanField(15)
 
 
 class GameForms(messages.Message):
@@ -173,6 +177,8 @@ class GameHistoryForm(messages.Message):
     """GameHistoryForm for outbound game state information"""
     word = messages.StringField(1, required=True)
     history = messages.StringField(2, repeated=True)
+    game_over = messages.BooleanField(3)
+    game_won = messages.BooleanField(4) 
 
 
 class NewGameForm(messages.Message):
