@@ -1,8 +1,8 @@
 #Full Stack Nanodegree Project 4 - Hangman
 
 ## Introduction:
-This game is based on the Udacity-Provided FSND-P4-Design-A-Game game skeleton. This can 
-be cloned on GitHub at: https://github.com/udacity/FSND-P4-Design-A-Game.git
+This game is based on the Udacity-Provided FSND-P4-Design-A-Game game skeleton. The code repository can  
+be found on GitHub at: https://github.com/udacity/FSND-P4-Design-A-Game
 
 ## Set-Up Instructions:
 1.  Update the value of application in app.yaml to the app ID you have registered

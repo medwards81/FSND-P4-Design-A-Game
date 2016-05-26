@@ -25,5 +25,3 @@ A: First off, I took me a really LONG time (months) just to understand the App E
    
    If I had more time, I would also like to add a front-end to the application.  I didn't want to delay turning the project in, so this
    is something I plan to get to in the near future.
-   
-    
