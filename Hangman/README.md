@@ -1,4 +1,4 @@
-#Full Stack Nanodegree Project 4 Refresh
+#Full Stack Nanodegree Project 4 - Hangman
 
 ## Set-Up Instructions:
 1.  Update the value of application in app.yaml to the app ID you have registered
@@ -11,12 +11,12 @@
  
  
 ##Game Description:
-Guess a number is a simple guessing game. Each game begins with a random 'target'
-number between the minimum and maximum values provided, and a maximum number of
-'attempts'. 'Guesses' are sent to the `make_move` endpoint which will reply
-with either: 'too low', 'too high', 'you win', or 'game over' (if the maximum
-number of attempts is reached).
-Many different Guess a Number games can be played by many different Users at any
+Hangman is a simple word guessing game. Each game begins with a 'word' to guess, and individual
+letter 'guesses' are registered as 'hits' or 'misses' depending on whether the guess matches 1 or more
+letters in the word.  A player wins the game if the word is guessed correctly before the 'guess limit'
+is reached. 'Guesses' are sent to the `make_move` endpoint which will reply
+with either: 'hit', 'miss' or 'game over' (if the maximum number of attempts is reached).
+Many different Hangman games can be played by many different Users at any
 given time. Each game can be retrieved or played by using the path parameter
 `urlsafe_game_key`.
 
@@ -40,12 +40,10 @@ given time. Each game can be retrieved or played by using the path parameter
  - **new_game**
     - Path: 'game'
     - Method: POST
-    - Parameters: user_name, min, max, attempts
+    - Parameters: user_name, word
     - Returns: GameForm with initial game state.
     - Description: Creates a new Game. user_name provided must correspond to an
-    existing user - will raise a NotFoundException if not. Min must be less than
-    max. Also adds a task to a task queue to update the average moves remaining
-    for active games.
+    existing user - will raise a NotFoundException if not. Word cannot contain any spaces.
      
  - **get_game**
     - Path: 'game/{urlsafe_game_key}'
@@ -59,35 +57,58 @@ given time. Each game can be retrieved or played by using the path parameter
     - Method: PUT
     - Parameters: urlsafe_game_key, guess
     - Returns: GameForm with new game state.
-    - Description: Accepts a 'guess' and returns the updated state of the game.
-    If this causes a game to end, a corresponding Score entity will be created.
+    - Description: Accepts a 'guess' and returns the updated state of the game. Guess must be 
+    1 character and unique from previous guesses, or a BadRequestException will be raised.
+    If this causes a game to end, a corresponding Score entity will be created, and UserRecord 
+    entity updated.
     
- - **get_scores**
-    - Path: 'scores'
+ - **get_user_games**
+    - Path: 'games/user/{urlsafe_user_key}'
     - Method: GET
-    - Parameters: None
-    - Returns: ScoreForms.
-    - Description: Returns all Scores in the database (unordered).
-    
- - **get_user_scores**
-    - Path: 'scores/user/{user_name}'
-    - Method: GET
-    - Parameters: user_name
-    - Returns: ScoreForms. 
-    - Description: Returns all Scores recorded by the provided player (unordered).
+    - Parameters: urlsafe_user_key
+    - Returns: GameForms. 
+    - Description: Returns all active Games (non-completed, non-cancelled) recorded by the provided player, 
+    ordered by date of game created.
     Will raise a NotFoundException if the User does not exist.
     
- - **get_active_game_count**
-    - Path: 'games/active'
+ - **cancel_game**
+    - Path: 'game/cancel/{urlsafe_game_key}'
+    - Method: PUT
+    - Parameters: urlsafe_game_key
+    - Returns: VoidMessage. 
+    - Description: Cancels a game. Will raise a NotFoundException if the Game does not exist. Will raise a
+    BadRequestException if Game has already been completed.
+      
+ - **get_high_scores**
+    - Path: 'scores'
     - Method: GET
-    - Parameters: None
-    - Returns: StringMessage
-    - Description: Gets the average number of attempts remaining for all games
-    from a previously cached memcache key.
+    - Parameters: number_of_results (optional)
+    - Returns: ScoreForms.
+    - Description: Returns all Scores in the database ordered by score.  Will limit fetch to number_of_results if
+    that parameter is provided.
+    
+ - **get_user_rankings**
+    - Path: 'ranking'
+    - Method: GET
+    - Parameters: None.
+    - Returns: UserRecordForms.
+    - Description: Returns all UserRecords in the database ordered by wins, then win percentage.
+    
+ - **get_game_history**
+    - Path: 'game_history/{urlsafe_game_key}'
+    - Method: GET
+    - Parameters: urlsafe_game_key.
+    - Returns: GameHistoryForm.
+    - Description: Returns Game history of moves made, and resulting 'hits' or 'misses' for each.   
+
 
 ##Models Included:
  - **User**
     - Stores unique user_name and (optional) email address.
+ 
+ - **UserRecord**
+    - Stores User games played and resulting overall record and winning percentage. Associated
+    with User model via KeyProperty.
     
  - **Game**
     - Stores unique game states. Associated with User model via KeyProperty.
