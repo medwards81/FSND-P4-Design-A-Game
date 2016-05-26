@@ -1,0 +1,29 @@
+Q: What additional properties did you add to your models and why?
+
+A: For the Game model, I added various properties relating to how the game Hangman is played.  For example, 'word' to
+   hold the word to be guessed; 'hits' to hold which guesses were correct and 'misses' to hold those incorrect; and 
+   'img_uri' to hold an image uri to signify the current 'miss'.
+   
+   For the Score model, I added the 'game' property to hold the Game KeyProperty for linking Scores to Games, and 
+   'won' to signify scores pertaining to games won or lost (as you don't need to win a game to achieve a score in 
+   my version of Hangman).
+   
+   I also added a UserRecord model to hold the overall record of the User in terms of wins, losses, games and
+   winning percentage, linked by the User KeyProperty.
+   
+Q: What were some of the trade-offs or struggles you faced when implementing the new game logic?
+
+A: First off, I took me a really LONG time (months) just to understand the App Engine ecosystem: Endpoints, NDB, DataStore,
+   ProtoRPC, etc.  I must have watched the entire course series of videos 5 times each.  This was partly due to working full 
+   time and raising two little ones in the household, but also in part due to complexity of scope.  Once I had my 'eureka' moment,
+   it all made sense and was quite enjoyable to work on.
+   
+   I made a few trade-offs in terms of making the game a little more simplistic in nature than perhaps it natively is, for sake of getting
+   the project working more quickly (again, partly due to lack of free time).  For instance, making the 'word' a single-word as
+   opposed to a phrase.  In the future, I may plan to revisit the project and add more features.  My primary concern with the project
+   was just getting a basic functional application.
+   
+   If I had more time, I would also like to add a front-end to the application.  I didn't want to delay turning the project in, so this
+   is something I plan to get to in the near future.
+   
+    
