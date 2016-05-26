@@ -1,21 +1,23 @@
 #Full Stack Nanodegree Project 4 - Hangman
 
+## Introduction:
+This game is based on the Udacity-Provided FSND-P4-Design-A-Game game skeleton. This can 
+be cloned on GitHub at: https://github.com/udacity/FSND-P4-Design-A-Game.git
+
 ## Set-Up Instructions:
 1.  Update the value of application in app.yaml to the app ID you have registered
  in the App Engine admin console and would like to use to host your instance of this sample.
 1.  Run the app with the devserver using dev_appserver.py DIR, and ensure it's
  running by visiting the API Explorer - by default localhost:8080/_ah/api/explorer.
 1.  (Optional) Generate your client library(ies) with the endpoints tool.
- Deploy your application.
- 
- 
+ Deploy your application. 
  
 ##Game Description:
 Hangman is a simple word guessing game. Each game begins with a 'word' to guess, and individual
-letter 'guesses' are registered as 'hits' or 'misses' depending on whether the guess matches 1 or more
+letter 'guesses' are registered as 'hits' or 'misses' depending on whether the guess matches one or more
 letters in the word.  A player wins the game if the word is guessed correctly before the 'guess limit'
 is reached. 'Guesses' are sent to the `make_move` endpoint which will reply
-with either: 'hit', 'miss' or 'game over' (if the maximum number of attempts is reached).
+with either: 'hit', 'miss' or 'game over' (if the maximum number of guesses is reached).
 Many different Hangman games can be played by many different Users at any
 given time. Each game can be retrieved or played by using the path parameter
 `urlsafe_game_key`.
@@ -68,7 +70,7 @@ given time. Each game can be retrieved or played by using the path parameter
     - Parameters: urlsafe_user_key
     - Returns: GameForms. 
     - Description: Returns all active Games (non-completed, non-cancelled) recorded by the provided player, 
-    ordered by date of game created.
+    ordered by date of game creation, descending.
     Will raise a NotFoundException if the User does not exist.
     
  - **cancel_game**
@@ -84,22 +86,23 @@ given time. Each game can be retrieved or played by using the path parameter
     - Method: GET
     - Parameters: number_of_results (optional)
     - Returns: ScoreForms.
-    - Description: Returns all Scores in the database ordered by score.  Will limit fetch to number_of_results if
-    that parameter is provided.
+    - Description: Returns all Scores in the database ordered by score, descending.  Will limit fetch to 
+    number_of_results if parameter is provided.
     
  - **get_user_rankings**
     - Path: 'ranking'
     - Method: GET
     - Parameters: None.
     - Returns: UserRecordForms.
-    - Description: Returns all UserRecords in the database ordered by wins, then win percentage.
+    - Description: Returns all UserRecords in the database ordered by wins, descending, then win 
+    percentage, descending.
     
  - **get_game_history**
     - Path: 'game_history/{urlsafe_game_key}'
     - Method: GET
     - Parameters: urlsafe_game_key.
     - Returns: GameHistoryForm.
-    - Description: Returns Game history of moves made, and resulting 'hits' or 'misses' for each.   
+    - Description: Returns Game history of moves made, and resulting 'hits' or 'misses' for each move.   
 
 
 ##Models Included:
@@ -118,16 +121,24 @@ given time. Each game can be retrieved or played by using the path parameter
     
 ##Forms Included:
  - **GameForm**
-    - Representation of a Game's state (urlsafe_key, attempts_remaining,
-    game_over flag, message, user_name).
+    - Representation of a Game's state (urlsafe_key, word, miss_count, game_over flag,
+    , message, user_name, created date, guesses, hits, misses, image_uri of hangman image to display,
+    guess_limit, match_count, cancelled, game_won flag).
+ - **GameForms**
+    - Multiple ScoreForm container.
+ - **GameHistoryForm**
+    - Representation of a Game's history and current state (word, word, history of moves, game_over flag,
+    game_won flag).
  - **NewGameForm**
-    - Used to create a new game (user_name, min, max, attempts)
+    - Used to create a new game (user_name, word)
  - **MakeMoveForm**
     - Inbound make move form (guess).
  - **ScoreForm**
-    - Representation of a completed game's Score (user_name, date, won flag,
-    guesses).
+    - Representation of a completed game's Score with additional data about the game (user_name, date, won flag,
+    guess_limit, miss_count, word_count, score, word).
  - **ScoreForms**
     - Multiple ScoreForm container.
+ - **UserRecordForm**
+    - Representation of a User's overall record (user_name, games, wins, losses, win_pct).
  - **StringMessage**
     - General purpose String container.
