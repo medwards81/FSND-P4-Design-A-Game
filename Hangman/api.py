@@ -14,7 +14,8 @@ from google.appengine.api import taskqueue
 
 from models import User, Game, Score, Hangman, UserRecord
 from models import StringMessage, NewGameForm, GameForm, MakeMoveForm,\
-    GameForms, ScoreForms, UserRecordForm, UserRecordForms, GameHistoryForm
+    GameForms, ScoreForms, UserRecordForm, UserRecordForms,\
+    GameHistoryForm, CancelGameForm
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -111,9 +112,11 @@ class HangmanApi(remote.Service):
     def make_move(self, request):
         """Makes a move. Returns a game state with message"""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if not game:
+            raise endpoints.NotFoundException(
+                    'Game not found!')
         if game.game_over:
             return game.to_form('Game already over!')
-
         # clean incoming guess and validate
         request_upper = request.guess.upper().strip()
         if not request_upper:
@@ -167,8 +170,7 @@ class HangmanApi(remote.Service):
         user = get_by_urlsafe(request.urlsafe_user_key, User)
         if not user:
             raise endpoints.NotFoundException('User not found!')
-        games = Game.query(Game.user==user.key, Game.game_over==False,
-                                           Game.cancelled==False).order(-Game.created)
+        games = Game.query(Game.user==user.key, Game.game_over==False).order(-Game.created)
         # return set of GameForm objects per User
         return GameForms(
             items=[game.to_form('') for game in games]
@@ -176,18 +178,24 @@ class HangmanApi(remote.Service):
 
 
     @endpoints.method(request_message=GET_GAME_REQUEST,
-                      response_message=message_types.VoidMessage,
+                      response_message=CancelGameForm,
                       path='game/cancel/{urlsafe_game_key}',
                       name='cancel_game',
-                      http_method='PUT')
+                      http_method='DELETE')
     def cancel_game(self, request):
         """Cancel a game (by urlsafe_game_key)."""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
-        if game.game_over == True:
-            raise endpoints.BadRequestException("Game has already been completed")
-        game.cancelled = True
-        game.put()
-        return message_types.VoidMessage()
+
+        if not game:
+            raise endpoints.NotFoundException('Game not found!')
+
+        if game.game_over:
+            return CancelGameForm(success=False,
+                                  message='Cancelling a completed game is not allowed')
+
+        game.key.delete()
+        return CancelGameForm(success=True,
+                             message='Game is cancelled successfully')
 
 
     @endpoints.method(request_message=GET_HIGH_SCORES_REQUEST,

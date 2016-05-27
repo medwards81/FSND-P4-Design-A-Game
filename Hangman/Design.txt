@@ -18,8 +18,8 @@ A: First off, I took me a really LONG time (months) just to understand the App E
    time and raising two little ones in the household, but also in part due to complexity of scope.  Once I had my 'eureka' moment,
    it all made sense and was quite enjoyable to work on.
    
-   I made a few trade-offs in terms of making the game a little more simplistic in nature than perhaps it natively is, for sake of getting
-   the project working more quickly (again, partly due to lack of free time).  For instance, making the 'word' a single-word as
+   I made a few trade-offs in terms of making the game a little more simplistic in nature than perhaps the Hangman game was originally designed, for sake of getting
+   the project working more quickly (again, partly due to time constraints).  For instance, making the 'word' a single-word as
    opposed to a phrase.  In the future, I may plan to revisit the project and add more features.  My primary concern with the project
    was just getting a basic functional application.
    

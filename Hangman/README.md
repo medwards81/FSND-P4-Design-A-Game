@@ -75,11 +75,11 @@ given time. Each game can be retrieved or played by using the path parameter
     
  - **cancel_game**
     - Path: 'game/cancel/{urlsafe_game_key}'
-    - Method: PUT
+    - Method: DELETE
     - Parameters: urlsafe_game_key
-    - Returns: VoidMessage. 
-    - Description: Cancels a game. Will raise a NotFoundException if the Game does not exist. Will raise a
-    BadRequestException if Game has already been completed.
+    - Returns: CancelGameForm. 
+    - Description: Cancels a game, and removes the Game entity. Will raise a NotFoundException if the Game 
+    does not exist. Will raise a BadRequestException if Game has already been completed.
       
  - **get_high_scores**
     - Path: 'scores'

@@ -43,7 +43,7 @@ class UserRecord(ndb.Model):
     wins = ndb.IntegerProperty(required=True, default=0)
     losses = ndb.IntegerProperty(required=True, default=0)
     win_pct = ndb.FloatProperty(required=True, default=0.00)
-    
+
     def to_form(self):
         return UserRecordForm(user_name=self.user.get().name,
                          games=self.games,
@@ -64,7 +64,6 @@ class Game(ndb.Model):
     image_uri = ndb.StringProperty(default=Hangman.DEFAULTS['images']['start'])
     game_over = ndb.BooleanProperty(required=True, default=False)
     user = ndb.KeyProperty(required=True, kind='User')
-    cancelled = ndb.BooleanProperty(default=False)
     history = ndb.StringProperty(repeated=True)
     game_won = ndb.BooleanProperty(default=False)
 
@@ -93,10 +92,9 @@ class Game(ndb.Model):
         form.image_uri = self.image_uri
         form.game_over = self.game_over
         form.message = message
-        form.cancelled = self.cancelled
         form.game_won = self.game_won
         return form
-        
+
     def to_history_form(self):
         """Returns a GameHistoryForm"""
         form = GameHistoryForm()
@@ -164,21 +162,25 @@ class GameForm(messages.Message):
     image_uri = messages.StringField(11)
     guess_limit = messages.IntegerField(12)
     match_count = messages.IntegerField(13)
-    cancelled = messages.BooleanField(14)
-    game_won = messages.BooleanField(15)
+    game_won = messages.BooleanField(14)
 
 
 class GameForms(messages.Message):
     """Return multiple GameForms"""
     items = messages.MessageField(GameForm, 1, repeated=True)
-    
-    
+
+
 class GameHistoryForm(messages.Message):
     """GameHistoryForm for outbound game state information"""
     word = messages.StringField(1, required=True)
     history = messages.StringField(2, repeated=True)
     game_over = messages.BooleanField(3)
-    game_won = messages.BooleanField(4) 
+    game_won = messages.BooleanField(4)
+
+
+class CancelGameForm(messages.Message):
+    success = messages.BooleanField(1, required=True)
+    message = messages.StringField(2, required=True)
 
 
 class NewGameForm(messages.Message):
@@ -207,7 +209,7 @@ class ScoreForm(messages.Message):
 class ScoreForms(messages.Message):
     """Return multiple ScoreForms"""
     items = messages.MessageField(ScoreForm, 1, repeated=True)
-    
+
 
 class UserRecordForm(messages.Message):
     """UserRecordForm for outbound UserRecord information"""
@@ -216,13 +218,13 @@ class UserRecordForm(messages.Message):
     wins = messages.IntegerField(3, required=True)
     losses = messages.IntegerField(4, required=True)
     win_pct = messages.StringField(5, required=True)
-    
- 
+
+
 class UserRecordForms(messages.Message):
     """Return multiple UserRecordForms"""
     items = messages.MessageField(UserRecordForm, 1, repeated=True)
 
-    
+
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
     message = messages.StringField(1, required=True)

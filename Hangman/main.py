@@ -18,7 +18,7 @@ class SendReminderEmail(webapp2.RequestHandler):
         users = User.query(User.email != None)
         for user in users:
             active_games = Game.query(Game.user==user.key, Game.game_over==False,
-                                      Game.cancelled==False).order(-Game.created)
+                                      Game.cancelled==False).order(Game.created)
             for game in active_games:
                 subject = 'This is a reminder!'
                 body = """Hello {}, you have an uncompleted Hangman game!
